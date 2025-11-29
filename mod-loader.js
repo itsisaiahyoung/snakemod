@@ -12,12 +12,22 @@ window.CustomGitHubMod = {
   runCodeBefore: () => {
     
     // --- REQUIRED HELPER FUNCTIONS ---
-    // These allow safe text replacement. If the game code changes, these throw errors instead of crashing silently.
-    String.prototype.assertReplace = function(re, repl) {
+    // Improved to handle string literals correctly (Fixes your "Match not found" crash)
+    String.prototype.assertReplace = function(search, replacement) {
       let s = this.toString();
-      if (!s.match(re)) throw "Match not found: " + re;
-      return s.replace(re, repl);
+      if (typeof search === 'string') {
+        // Literal String Check
+        if (s.indexOf(search) === -1) {
+            let snippet = search.length > 50 ? search.substring(0, 50) + "..." : search;
+            throw "Exact string match not found: " + snippet;
+        }
+      } else {
+        // Regex Check
+        if (!s.match(search)) throw "Regex match not found: " + search;
+      }
+      return s.replace(search, replacement);
     };
+
     String.prototype.assertReplaceAll = function(re, repl) {
       let s = this.toString();
       if (!s.match(re)) throw "Match not found: " + re;
@@ -30,7 +40,7 @@ window.CustomGitHubMod = {
       img.src = src;
       img.width = 40;
       img.height = 40;
-      img.className = 'DqMRee SsAred'; // Google's CSS class for menu items
+      img.className = 'DqMRee SsAred';
       return img;
     };
 
@@ -85,9 +95,8 @@ window.CustomGitHubMod = {
   // ===============================================================
   alterSnakeCode: code => {
     
-    // --- PART A: MORE MENU LOGIC (Apple Counts, Board Sizes, Speeds) ---
-    // (This section merges your request for the "More Menu Mod")
-
+    // --- PART A: MORE MENU LOGIC ---
+    // Extracts key variables from the game engine
     const resetFunction = code.match(/reset\n?\(\n?\)\n?{\n?this\n?\.\n?[a-zA-Z0-9_$]{1,8}\n?=\n?\[\];[^]*?pos\n?\)\n?}/)[0];
     const selectedAppleCount = resetFunction.match(/this\n?\.\n?settings\n?\.\n?[a-zA-Z0-9_$]{1,8}\n?!==\n?0/)[0].replace(/!==\n?0/, '').replace(/\n/g, '');
     const applePlacementStem = resetFunction.match(/this\n?\.\n?[a-zA-Z0-9_$]{1,8}\n?\.\n?push\n?\(\n?[a-zA-Z0-9_$]{1,8}\n?\(\n?this\n?,/)[0];
@@ -97,13 +106,14 @@ window.CustomGitHubMod = {
     const isModeSelected = code.match(/[a-zA-Z0-9_$]{1,8}\n?=\n?function\n?\(\n?a\n?,\n?b\n?\)\n?{\n?return a\.[a-zA-Z0-9_$]{1,8}\?a\.[a-zA-Z0-9_$]{1,8}\.has\(b\):[^]*?===\n?b\n?}/)[0].match(/[a-zA-Z0-9_$]{1,8}/)[0];
 
     // Modify Reset Function (Custom Apple Counts)
+    // FIX: Using regex /if\s*\(\s*a\s*\)/ handles both "if(a)" and "if (a)" (spaces)
     code = code.assertReplace(resetFunction,
-      resetFunction.assertReplace('if(a)', `
+      resetFunction.assertReplace(/if\s*\(\s*a\s*\)/, `
         if(${selectedAppleCount} > 3) {
           if(!${checkBadMode}(this.settings)) {
              if(${selectedAppleCount} === 4) { ${applePlacementStem} +1, +2)) ${applePlacementStem} -1, +2)) ${applePlacementStem} -3, +2)) ${applePlacementStem} +0, +1)) ${applePlacementStem} -2, +1)) ${applePlacementStem} +1, +0)) ${applePlacementStem} -1, +0)) ${applePlacementStem} -3, +0)) ${applePlacementStem} +0, -1)) ${applePlacementStem} -2, -1)) ${applePlacementStem} +1, -2)) ${applePlacementStem} -1, -2)) ${applePlacementStem} -3, -2)) }
-             else if(${selectedAppleCount} === 5) { /* 25 Apples */ ${applePlacementStem} +1, +2)) ${applePlacementStem} +0, +2)) ${applePlacementStem} -1, +2)) ${applePlacementStem} -2, +2)) ${applePlacementStem} -3, +2)) ${applePlacementStem} +1, +1)) ${applePlacementStem} +0, +1)) ${applePlacementStem} -1, +1)) ${applePlacementStem} -2, +1)) ${applePlacementStem} -3, +1)) ${applePlacementStem} +1, +0)) ${applePlacementStem} +0, +0)) ${applePlacementStem} -1, +0)) ${applePlacementStem} -2, +0)) ${applePlacementStem} -3, +0)) ${applePlacementStem} +1, -1)) ${applePlacementStem} +0, -1)) ${applePlacementStem} -1, -1)) ${applePlacementStem} -2, -1)) ${applePlacementStem} -3, -1)) ${applePlacementStem} +1, -2)) ${applePlacementStem} +0, -2)) ${applePlacementStem} -1, -2)) ${applePlacementStem} -2, -2)) ${applePlacementStem} -3, -2)) }
-             else if(${selectedAppleCount} === 6) { /* 40 Apples */ ${applePlacementStem} +1, +2)) ${applePlacementStem} +0, +2)) ${applePlacementStem} -1, +2)) ${applePlacementStem} -2, +2)) ${applePlacementStem} -3, +2)) ${applePlacementStem} +1, +1)) ${applePlacementStem} +0, +1)) ${applePlacementStem} -1, +1)) ${applePlacementStem} -2, +1)) ${applePlacementStem} -3, +1)) ${applePlacementStem} +1, +0)) ${applePlacementStem} +0, +0)) ${applePlacementStem} -1, +0)) ${applePlacementStem} -2, +0)) ${applePlacementStem} -3, +0)) ${applePlacementStem} +1, -1)) ${applePlacementStem} +0, -1)) ${applePlacementStem} -1, -1)) ${applePlacementStem} -2, -1)) ${applePlacementStem} -3, -1)) ${applePlacementStem} +1, -2)) ${applePlacementStem} +0, -2)) ${applePlacementStem} -1, -2)) ${applePlacementStem} -2, -2)) ${applePlacementStem} -3, -2)) ${applePlacementStem} -3, -3)) ${applePlacementStem} -2, -3)) ${applePlacementStem} -1, -3)) ${applePlacementStem} +0, -3)) ${applePlacementStem} +1, -3)) ${applePlacementStem} +2, -2)) ${applePlacementStem} +2, -1)) ${applePlacementStem} +2, +0)) ${applePlacementStem} +2, +1)) ${applePlacementStem} +2, +2)) ${applePlacementStem} +1, +3)) ${applePlacementStem} +0, +3)) ${applePlacementStem} -1, +3)) ${applePlacementStem} -2, +3)) ${applePlacementStem} -3, +3)) }
+             else if(${selectedAppleCount} === 5) { ${applePlacementStem} +1, +2)) ${applePlacementStem} +0, +2)) ${applePlacementStem} -1, +2)) ${applePlacementStem} -2, +2)) ${applePlacementStem} -3, +2)) ${applePlacementStem} +1, +1)) ${applePlacementStem} +0, +1)) ${applePlacementStem} -1, +1)) ${applePlacementStem} -2, +1)) ${applePlacementStem} -3, +1)) ${applePlacementStem} +1, +0)) ${applePlacementStem} +0, +0)) ${applePlacementStem} -1, +0)) ${applePlacementStem} -2, +0)) ${applePlacementStem} -3, +0)) ${applePlacementStem} +1, -1)) ${applePlacementStem} +0, -1)) ${applePlacementStem} -1, -1)) ${applePlacementStem} -2, -1)) ${applePlacementStem} -3, -1)) ${applePlacementStem} +1, -2)) ${applePlacementStem} +0, -2)) ${applePlacementStem} -1, -2)) ${applePlacementStem} -2, -2)) ${applePlacementStem} -3, -2)) }
+             else if(${selectedAppleCount} === 6) { ${applePlacementStem} +1, +2)) ${applePlacementStem} +0, +2)) ${applePlacementStem} -1, +2)) ${applePlacementStem} -2, +2)) ${applePlacementStem} -3, +2)) ${applePlacementStem} +1, +1)) ${applePlacementStem} +0, +1)) ${applePlacementStem} -1, +1)) ${applePlacementStem} -2, +1)) ${applePlacementStem} -3, +1)) ${applePlacementStem} +1, +0)) ${applePlacementStem} +0, +0)) ${applePlacementStem} -1, +0)) ${applePlacementStem} -2, +0)) ${applePlacementStem} -3, +0)) ${applePlacementStem} +1, -1)) ${applePlacementStem} +0, -1)) ${applePlacementStem} -1, -1)) ${applePlacementStem} -2, -1)) ${applePlacementStem} -3, -1)) ${applePlacementStem} +1, -2)) ${applePlacementStem} +0, -2)) ${applePlacementStem} -1, -2)) ${applePlacementStem} -2, -2)) ${applePlacementStem} -3, -2)) ${applePlacementStem} -3, -3)) ${applePlacementStem} -2, -3)) ${applePlacementStem} -1, -3)) ${applePlacementStem} +0, -3)) ${applePlacementStem} +1, -3)) ${applePlacementStem} +2, -2)) ${applePlacementStem} +2, -1)) ${applePlacementStem} +2, +0)) ${applePlacementStem} +2, +1)) ${applePlacementStem} +2, +2)) ${applePlacementStem} +1, +3)) ${applePlacementStem} +0, +3)) ${applePlacementStem} -1, +3)) ${applePlacementStem} -2, +3)) ${applePlacementStem} -3, +3)) }
              else if(${selectedAppleCount} === 7) { for(let dy = -4; dy <= 4; dy++) for(let dx = -7; dx <= 2; dx++) ${applePlacementStem} dx, dy)) }
              else if(${selectedAppleCount} === 8) { for(let i = 0; i < 200; i++) ${applePlacementStem} -1, +0)) }
              else if(${selectedAppleCount} === 9) { for(let i = 0; i < 10000; i++) ${applePlacementStem} -1, +0)) }
@@ -115,7 +125,7 @@ window.CustomGitHubMod = {
              } else { for(let i = 0; i < 20000; i++) ${applePlacementStem} +0, +0)) }
           }
         } else if(a)`
-      ).assertReplace('pos)}', `pos)
+      ).assertReplace(/pos\s*\)\s*\}/, `pos)
           if(${isModeSelected}(this.settings, 2) && ${selectedAppleCount} > 4) {
             for(let __i___ = 0; __i___ < ${appleArray}.length; __i___ += 2) {
               ${appleArray}[__i___].type = ${appleArray}[__i___ + 1].type = Math.floor(Math.random() * 24)
@@ -192,7 +202,7 @@ window.CustomGitHubMod = {
     );
 
     // Speed Icon Fix
-    const speedIconFunction = code.match(/[a-zA-Z0-9_$]{1,8}\n?=\n?function\n?\(a\)\n?{\n?var b\n?=\n?a\n?\.\n?settings\n?\.\n?[a-zA-Z0-9_$]{1,8}\n?===\n?1\n?;\n?a\n?\.\n?[a-zA-Z0-9_$]{1,8}\n?\.\n?clearRect\n?\(\n?0\n?,\n?0\n?,\n?[^]*?\n?0\n?\)\n?,\n?0\n?,\n?c\n?,\n?a\n?\.\n?settings\n?\.\n?[a-zA-Z0-9_$]{1,8}\n?\)\n?}/)[0];
+    const speedIconFunction = code.match(/[a-zA-Z0-9_$]{1,8}\n?=\n?function\n?\(a\)\n?{\n?var b\n?=\n?a\n?\.\n?settings\n?\.\n?[a-zA-Z0-9_$]{1,8}\n?===\n?1\n?;\n?a\n?\.\n?[a-zA-Z0-9_$]{1,8}\n?\.\n?clearRect\n?\(\n?0\n?,\n?0\n?,\n?[^]*?\n?0\n?\)\n?,\n?0\n?,\n?c\n?,\n?a\n?\.\n?settings\n?\.\n?[a-zA-Z0-9_$]{1,8}\n?\)\n?}\n?}\n?}\n?}/)[0];
     const canvWidth = speedIconFunction.match(/const c\n?=\n?a\n?\.\n?[a-zA-Z0-9_$]{1,8}\n?\.\n?width/)[0].assertReplace(/const c\n?=/, '');
     const canv = speedIconFunction.match(/a\n?\.\n?[a-zA-Z0-9_$]{1,8}\n?\.\n?render/g)[1].assertReplace(/.\n?render/, '');
     const selectedSpeed1 = speedIconFunction.match(/a\n?\.\n?settings\n?\.\n?[a-zA-Z0-9_$]{1,8}\n?===\n?1/g)[1].assertReplace(/\n?===\n?1/, '');
