@@ -1,65 +1,82 @@
-console.log("%c🐍 TEST MOD ACTIVATED", "color:#6f0;font-size:20px");
+console.log("%c🐍 Custom Snake Test Mod Loaded", "color:#4f0;font-size:18px");
 
-// wait until snake engine exists
-function waitForSnake() {
-    if (!window.snake || !snake.game) return requestAnimationFrame(waitForSnake);
-    console.log("%c✔ Snake engine detected", "color:#0ff;font-size:16px");
-    startTestMods();
+// =============== WAIT FOR GAME ===============
+function hookWhenReady(){
+    if (!window.snake || !snake.game) return requestAnimationFrame(hookWhenReady);
+    console.log("%c✔ Snake Game Hooked", "color:#0ff;font-size:16px");
+    initMod();
 }
-waitForSnake();
+hookWhenReady();
 
-// ===============================
-//  🔥 TEST MOD PACK
-// ===============================
-let settings = {
-    infiniteLength:false,
-    turboSpeed:false,
-    appleFlood:false,
-    rainbowSnake:false
+// =============================================
+// TEST SETTINGS STORAGE
+let cfg = {
+    infinite:false,
+    turbo:false,
+    rainbow:false
 };
 
-// keybinds shown in console
-console.log(`
-===== TEST MOD KEYS =====
-[1] Infinite Length
-[2] Turbo Speed
-[3] Apple Flood
-[4] Rainbow Snake
-=========================
-`);
+// =============== MAIN MOD LOGIC ===============
+function initMod(){
 
-document.addEventListener("keydown", e=>{
-    if(e.key==="1") toggle("infiniteLength");
-    if(e.key==="2") toggle("turboSpeed");
-    if(e.key==="3") toggle("appleFlood");
-    if(e.key==="4") toggle("rainbowSnake");
-});
+    // UI inject when pause menu opens
+    let observer = new MutationObserver(()=> {
+        let menu = document.querySelector("div[role='presentation']"); // pause UI menu
+        if(menu && !document.getElementById("modMenu")) buildUI(menu);
+    });
+    observer.observe(document.body,{childList:true,subtree:true});
 
-function toggle(type){
-    settings[type]=!settings[type];
-    console.log(`%cToggled ${type}: ${settings[type]}`, "color:yellow");
-}
-
-// Main mod loop — modifies game each frame
-function startTestMods(){
-    const loop = setInterval(()=>{
+    // main game hook
+    setInterval(()=>{
         let g = snake.game;
         if(!g) return;
 
-        // 1. Infinite length
-        if(settings.infiniteLength) g.snakeLength+=5;
+        if(cfg.infinite) g.snakeLength += 2;
+        if(cfg.turbo) g.speed = 3.0;
+        if(cfg.rainbow) g.snakeColor = `hsl(${(Date.now()/4)%360},100%,50%)`;
 
-        // 2. Turbo Speed
-        if(settings.turboSpeed) g.speed = 3.0;
+    },80);
 
-        // 3. Apple Flood
-        if(settings.appleFlood && g.appleCount < 10){
-            g.appleCount += Math.floor(Math.random()*3)+1;
-        }
+    // keyboard controls work now
+    document.addEventListener("keydown", e=>{
+        if(e.key==="1") toggle("infinite");
+        if(e.key==="2") toggle("turbo");
+        if(e.key==="3") toggle("rainbow");
+    });
 
-        // 4. Rainbow snake
-        if(settings.rainbowSnake){
-            g.snakeColor = `hsl(${Math.random()*360},100%,50%)`;
-        }
-    },100);
+    console.log("%cFeature keys loaded:", "color:yellow");
+    console.log("[1] Infinite length");
+    console.log("[2] Turbo");
+    console.log("[3] Rainbow");
+}
+
+// =============== UI PANEL ====================
+function buildUI(parent){
+    let box = document.createElement("div");
+    box.id="modMenu";
+    box.style = `
+        background:#111C; color:white; padding:10px;
+        margin-top:10px; border-radius:8px; font-size:14px;
+    `;
+
+    box.innerHTML=`
+        <b>🐍 CUSTOM MOD</b><br>
+        <button data-set='infinite'>Infinite Length</button><br>
+        <button data-set='turbo'>Turbo Speed</button><br>
+        <button data-set='rainbow'>Rainbow Snake</button><br>
+        <small>OR use keys 1 / 2 / 3</small>
+    `;
+
+    box.querySelectorAll("button").forEach(b=>{
+        b.style.margin="4px"; b.style.padding="6px"; b.style.width="100%";
+        b.onclick = ()=> toggle(b.dataset.set);
+    });
+
+    parent.appendChild(box);
+}
+
+// ============== TOGGLE FN ====================
+function toggle(name){
+    cfg[name] = !cfg[name];
+    console.log(`%c${name} = ${cfg[name]}`, "color:#f80");
 }
