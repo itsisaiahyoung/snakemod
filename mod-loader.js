@@ -1,61 +1,56 @@
-console.log("%c🐍 Custom Snake Mod Loaded", "color:#4f0;font-size:20px");
+// The object name MUST match the ID in the Tampermonkey script (CustomGitHubMod)
+window.CustomGitHubMod = {
+    
+    // 1. Run BEFORE the game loads (Good for setting flags)
+    runCodeBefore: function() {
+        console.log("⏳ Custom Mod: Initializing...");
+    },
 
-function wait(){
-    if(!window.snake?.game) return requestAnimationFrame(wait);
-    console.log("%c✔ Hooked Into Game", "color:#0ff;font-size:15px");
-    initMod();
-}
-wait();
+    // 2. MODIFY the game engine text (The cleanest way to mod)
+    // This function receives the game code as a string ('code') and must return the modified string.
+    alterSnakeCode: function(code) {
+        console.log("⚡ Custom Mod: Patching Engine...");
 
-let cfg = { infinite:false, turbo:false, rainbow:false };
+        // --- PATCH: IMMORTALITY ---
+        // Replaces the death sound trigger with a console log
+        // Regex looks for: xUD.vrc.play(),d(),AVD(a.Ea) or similar variations found in minified code
+        // We replace "this.Aa.Ta+=1" (growth) and death triggers safely.
+        
+        // Growth Hack: Change +=1 to +=5
+        // (Note: "this.Aa.Ta" is the standard growth variable in the current Google Snake version)
+        if (code.includes("this.Aa.Ta+=1")) {
+            code = code.replace(/this\.Aa\.Ta\+=1/g, "this.Aa.Ta+=5");
+            console.log("✅ Growth Patch Applied");
+        } else {
+            console.log("❌ Growth Patch Failed (Variable name changed?)");
+        }
 
-function initMod(){
+        // Death Hack:
+        // We look for the specific function call that plays the death sound and prevent the reset logic.
+        // Matches: xUD.vrc.play(),d(),AVD(a.Ea)
+        // We replace it with: (console.log('Immortal'),false)
+        // This prevents the reset function 'd()' from running.
+        const deathRegex = /xUD\.vrc\.play\(\),d\(\),AVD\(a\.Ea\)/;
+        if (deathRegex.test(code)) {
+            code = code.replace(deathRegex, '(console.log("🛡️ Death Prevented"),false)');
+            console.log("✅ Immortality Patch Applied");
+        } else {
+             console.log("❌ Immortality Patch Failed (Regex mismatch)");
+        }
 
-    // UI inject into pause menu
-    new MutationObserver(()=>{
-        let menu=document.querySelector("div[role='presentation']");
-        if(menu && !document.getElementById("modMenu")) buildUI(menu);
-    }).observe(document.body,{childList:true,subtree:true});
+        return code;
+    },
 
-    setInterval(()=>{
-        let g=snake.game; if(!g) return;
-        if(cfg.infinite) g.snakeLength+=1;
-        if(cfg.turbo) g.speed=2.5;
-        if(cfg.rainbow) g.snakeColor=`hsl(${(Date.now()/4)%360},100%,50%)`;
-    },70);
-
-    // keys
-    document.addEventListener("keydown",e=>{
-        if(e.key=="1") toggle("infinite");
-        if(e.key=="2") toggle("turbo");
-        if(e.key=="3") toggle("rainbow");
-    });
-
-    console.log("Keys Active → 1=infinite | 2=turbo | 3=rainbow");
-}
-
-function toggle(n){
-    cfg[n]=!cfg[n];
-    console.log(`%c${n} → ${cfg[n]}`, "color:#ffa500");
-}
-
-function buildUI(menu){
-    let box=document.createElement("div");
-    box.id="modMenu";
-    box.style=`background:#111c;padding:10px;margin-top:10px;color:white;border-radius:8px`;
-
-    box.innerHTML=`
-    <b>🐍 CUSTOM MOD</b><br>
-    <button data="infinite">Infinite Growth</button>
-    <button data="turbo">Turbo Speed</button>
-    <button data="rainbow">Rainbow Snake</button>
-    <br><small>Hotkeys → 1 / 2 / 3</small>
-    `;
-
-    box.querySelectorAll("button").forEach(b=>{
-        b.style.cssText="margin:4px;padding:6px;width:100%";
-        b.onclick=()=>toggle(b.getAttribute("data"));
-    });
-
-    menu.appendChild(box);
-}
+    // 3. Run AFTER the game boots (Good for UI changes)
+    runCodeAfter: function() {
+        console.log("🚀 Custom Mod: Game Started!");
+        
+        // Example: Add a keyboard listener
+        document.addEventListener('keydown', e => {
+            if(e.key === 'b') {
+                console.log("You pressed B inside the mod!");
+                // You can access window.snake here usually
+            }
+        });
+    }
+};
