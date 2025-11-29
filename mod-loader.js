@@ -1,45 +1,65 @@
-/*
-==========================================================
-🔥 Google Snake Custom Mod
-✦ Fully loader-compatible
-✦ Designed for googlemods.com/v/current/
-✦ Safe to run — doesn’t replace engine, hooks instead
-==========================================================
-*/
+console.log("%c🐍 TEST MOD ACTIVATED", "color:#6f0;font-size:20px");
 
-console.log("%c🐍 Custom Snake Mod Loaded!", "color:#0f0;font-size:18px;font-weight:bold");
+// wait until snake engine exists
+function waitForSnake() {
+    if (!window.snake || !snake.game) return requestAnimationFrame(waitForSnake);
+    console.log("%c✔ Snake engine detected", "color:#0ff;font-size:16px");
+    startTestMods();
+}
+waitForSnake();
 
-// Wait until the real game engine is active
-const waitForSnake = setInterval(() => {
-    try {
-        // check that game is running & player exists
-        if (window.snake && snake.snakeLength !== undefined) {
+// ===============================
+//  🔥 TEST MOD PACK
+// ===============================
+let settings = {
+    infiniteLength:false,
+    turboSpeed:false,
+    appleFlood:false,
+    rainbowSnake:false
+};
 
-            clearInterval(waitForSnake);
-            console.log("%c✔ Snake Engine Found — Mod Activating", "color:#0ff;font-size:16px");
+// keybinds shown in console
+console.log(`
+===== TEST MOD KEYS =====
+[1] Infinite Length
+[2] Turbo Speed
+[3] Apple Flood
+[4] Rainbow Snake
+=========================
+`);
 
-            // =====================================================
-            // 🔥 HERE IS YOUR MOD (you can edit this part!)
-            // =====================================================
+document.addEventListener("keydown", e=>{
+    if(e.key==="1") toggle("infiniteLength");
+    if(e.key==="2") toggle("turboSpeed");
+    if(e.key==="3") toggle("appleFlood");
+    if(e.key==="4") toggle("rainbowSnake");
+});
 
-            // example: give permanent infinite length growth
-            const grow = snake.grow;
-            snake.grow = function(x) {
-                return grow.apply(this, [x + 9999]);  // +9999 every apple
-            };
+function toggle(type){
+    settings[type]=!settings[type];
+    console.log(`%cToggled ${type}: ${settings[type]}`, "color:yellow");
+}
 
-            // example: speed boost toggle (press B)
-            document.addEventListener("keydown", e => {
-                if (e.key.toLowerCase() === "b") {
-                    snake.speed = snake.speed === 10 ? 1 : 10;
-                    console.log("⚡ Speed toggled:", snake.speed);
-                }
-            });
+// Main mod loop — modifies game each frame
+function startTestMods(){
+    const loop = setInterval(()=>{
+        let g = snake.game;
+        if(!g) return;
 
-            console.log("%c🔥 Custom Mod Active", "color:#ff0;font-size:18px");
+        // 1. Infinite length
+        if(settings.infiniteLength) g.snakeLength+=5;
+
+        // 2. Turbo Speed
+        if(settings.turboSpeed) g.speed = 3.0;
+
+        // 3. Apple Flood
+        if(settings.appleFlood && g.appleCount < 10){
+            g.appleCount += Math.floor(Math.random()*3)+1;
         }
 
-    } catch(e) {
-        console.error("Mod init error →", e);
-    }
-}, 200);
+        // 4. Rainbow snake
+        if(settings.rainbowSnake){
+            g.snakeColor = `hsl(${Math.random()*360},100%,50%)`;
+        }
+    },100);
+}
